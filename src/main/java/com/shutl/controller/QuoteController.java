@@ -9,16 +9,13 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 @RestController
 public class QuoteController {
 
     private static final long DTP_CONSTANT = 100000000;
-    private static final String CARRIER_DATA = "src\\data\\carrier_data.json";
+    private static final String CARRIER_DATA = "src" + File.separator + "data" + File.separator + "carrier_data.json";
 
     @RequestMapping(value = "/quote", method = RequestMethod.POST)
     public @ResponseBody
@@ -85,14 +82,13 @@ public class QuoteController {
     }
 
     /**
-     *
      * This is a helper method for getPriceListJSON method
      * Price calculations can be manipulated easily in the future by editing this method
      *
-     * @param initialPrice Price before any markups
-     * @param carrierBasePrice Base price asked by the carrier
+     * @param initialPrice       Price before any markups
+     * @param carrierBasePrice   Base price asked by the carrier
      * @param serviceMarkupPrice Service specific markup price
-     * @param vehicle Vehicle type required for vehicle markup calculation
+     * @param vehicle            Vehicle type required for vehicle markup calculation
      * @return final price after markups
      */
     private Long calcPriceByService(Long initialPrice, Long carrierBasePrice, Long serviceMarkupPrice, Vehicle vehicle) {
@@ -101,18 +97,17 @@ public class QuoteController {
     }
 
     /**
-     *
      * Not the best place (wrong controller) or practice to display HTML
      * But had to do a bit of improvisation here to keep it simple
      *
      * @return HTML content
      * @throws IOException
      */
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces="text/html")
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces = "text/html")
     public @ResponseBody
     String index() throws IOException {
 
-        FileReader fr = new FileReader("src\\static\\html\\index.html");
+        FileReader fr = new FileReader("src" + File.separator + "static" + File.separator + "html" + File.separator + "index.html");
         BufferedReader br = new BufferedReader(fr);
         StringBuilder content = new StringBuilder();
         String line;

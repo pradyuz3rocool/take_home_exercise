@@ -160,9 +160,9 @@
                         $('#' + elem.attr('id') + 'SubText').html("Postcode verified.");
                     } else {
                         var string = '';
-                        for (var i = 0; i < data['result'][0].length -1; i++) {
+                        for (var i = 0; i <= data['result'][0].length; i++) {
                             string += data['result'][i];
-                            if(i > 0) break;
+                            if(i > 0 || data['result'][i+1] == null) break;
                             string += " or ";
                         }
                         $('#' + elem.attr('id') + 'SubText').html("Is it " + string + " ?");

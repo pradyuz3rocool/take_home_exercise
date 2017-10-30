@@ -1,0 +1,230 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Restful Deliveries</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css"/>
+
+    <!-- Custom Fonts -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+          type="text/css"/>
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic"
+          rel="stylesheet" type="text/css"/>
+
+    <style type="text/css">
+
+        body {
+            background-image: url('https://blackrockdigital.github.io/startbootstrap-stylish-portfolio/img/bg.jpg');
+            background-size: cover;
+        }
+
+        .card {
+            margin-top: 30px;
+            background-color: rgba(0, 0, 0, 0.55);
+            color: white;
+            border-radius: 15px;
+        }
+
+        input, select {
+            color: white !important;
+            border-color: rgba(74, 83, 95, 0.7) !important;
+            background-color: rgba(0, 0, 0, 0.3) !important;
+        }
+
+        th {
+            border-color: transparent !important;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <form style="margin: 0">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="pickupPostcode">Pickup</label>
+                                    <input name="pickupPostcode" type="text" class="form-control" id="pickupPostcode"
+                                           id="pickupPostcode" oninput="this.value = this.value.toUpperCase(); autocompletePostcode($(this))"
+                                           placeholder="Postcode" autocomplete="off">
+                                    <small class="form-text text-muted" id="pickupPostcodeSubText"></small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="deliveryPostcode">Delivery</label>
+                                    <input name="deliveryPostcode" type="text" class="form-control"
+                                           id="deliveryPostcode" oninput="this.value = this.value.toUpperCase(); autocompletePostcode($(this))"
+                                           id="deliveryPostcode" placeholder="Postcode" autocomplete="off">
+                                    <small class="form-text text-muted" id="deliveryPostcodeSubText"></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="vehicleSelect">You can deliver my item with</label>
+                                    <select name="vehicle" class="form-control" id="vehicleSelect">
+                                        <option selected value="bicycle">Bicycle</option>
+                                        <option value="motorbike">Motorbike</option>
+                                        <option value="parcel_car">Parcel Car</option>
+                                        <option value="small_van">Small Van</option>
+                                        <option value="large_van">Large Van</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="getQuote()" class="btn btn-primary btn-lrg btn-block">
+                            <h4 style="margin: 3px" id="get_quote_text">Get Quote</h4></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div style="margin-top: 8px; margin-bottom: 20px;" id="response_card" class="card hidden">
+                <div class="card-body">
+                    <h5 style="margin: 0; text-align: center" id="response_body">Getting quotes..</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    var POSTCODES_GOOD = true;
+
+    function getQuote() {
+
+        $('#response_card').slideUp();
+
+        if (!this.validateQuoteRequest()) {
+            return;
+        }
+
+        $('#get_quote_text').html('<i class="fa fa-spinner fa-pulse fa-1x fa-fw"></i>');
+
+        // Spring framework does not like post request without right "Content-Type" headers
+        $.ajax({
+            type: "POST",
+            url: "/quote",
+            dataType: "json",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({
+                'pickupPostcode': $('#pickupPostcode').val(),
+                'deliveryPostcode': $('#deliveryPostcode').val(),
+                'vehicle': $('#vehicleSelect').val()
+            }),
+            success: function (response) {
+                console.log(response);
+                setTimeout(function () {
+                    $('#get_quote_text').html('Get Quote');
+                    $('#response_body').html(this.preparePriceList(response));
+                    $('#response_card').slideDown();
+                }, 1300);
+            },
+            error: function (response) {
+                $('#get_quote_text').html('Get Quote');
+                $('#response_card').slideUp();
+                console.log(response);
+            }
+        });
+    }
+
+    function autocompletePostcode(elem) {
+
+        // Lets not spam the api and wait until user enters the first two letters of their postcode
+        if (elem.val().length > 2)
+            $.get("https://api.postcodes.io/postcodes/" + elem.val() + "/autocomplete", function (data, status) {
+                if(data['result'] != null){
+                    if(elem.val().toLowerCase().replace(/\s+/, "") == (data['result'][0]).toLowerCase().replace(/\s+/, "")){
+                        POSTCODES_GOOD = true;
+                        $('#' + elem.attr('id') + 'SubText').html("Postcode verified.");
+                    } else {
+                        var string = '';
+                        for (var i = 0; i < data['result'][0].length -1; i++) {
+                            string += data['result'][i];
+                            if(i > 0) break;
+                            string += " or ";
+                        }
+                        $('#' + elem.attr('id') + 'SubText').html("Is it " + string + " ?");
+                    }
+                } else {
+                    POSTCODES_GOOD = false;
+                    $('#' + elem.attr('id') + 'SubText').html("<span style='color: orangered'>Wrong or unknown postcode.</span>");
+                }
+            });
+    }
+
+    function validateQuoteRequest() {
+
+        if(!POSTCODES_GOOD){
+            return false;
+        }
+
+        if ($('#pickupPostcode').val() == "") {
+            $('#pickupPostcode').focus();
+            return false;
+        }
+        if ($('#deliveryPostcode').val() == "") {
+            $('#deliveryPostcode').focus();
+            return false;
+        }
+
+        if ($('#deliveryPostcode').val().toLowerCase().replace(/\s+/, "") == $('#pickupPostcode').val().toLowerCase().replace(/\s+/, "")) {
+            alert("Collection postcode cannot be the same as delivery postcode.");
+            return false;
+        }
+
+        return true;
+    }
+
+    function preparePriceList(response) {
+
+        if (response['price_list'].length === 0) {
+            return 'We could not find any quotes for you :(';
+        }
+
+        var table_string =
+            '<table class="table table-dark" style="margin: 0; background-color: transparent">' +
+            '<tr><th>Company</th>' +
+            '<th>Price</th>' +
+            '<th>Duration</th></tr>';
+
+        for (var i = 0; i < response['price_list'].length; i++) {
+            table_string += '<tr>' +
+                '<td>' + response['price_list'][i]['service'] + '</td>' +
+                '<td>' + response['price_list'][i]['price'] + '</td>' +
+                '<td>' + response['price_list'][i]['delivery_time'] + '</td>' +
+                '</tr>';
+        }
+
+        return (table_string + '</table>');
+    }
+
+</script>
+<!-- Bootstrap core JavaScript -->
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
